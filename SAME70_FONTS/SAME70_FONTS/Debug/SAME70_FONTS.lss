@@ -31,9 +31,9 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
  13 .debug_macro  0001fd05  00000000  00000000  0005e1f5  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_line   0000ac30  00000000  00000000  0007defa  2**0
+ 14 .debug_line   0000ac2f  00000000  00000000  0007defa  2**0
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_str    0009424e  00000000  00000000  00088b2a  2**0
+ 15 .debug_str    0009424e  00000000  00000000  00088b29  2**0
                   CONTENTS, READONLY, DEBUGGING
  16 .debug_frame  00003698  00000000  00000000  0011cd78  2**2
                   CONTENTS, READONLY, DEBUGGING
@@ -764,7 +764,7 @@ void RTT_Handler(void)
   4005aa:	eeb1 7a00 	vmov.f32	s14, #16	; 0x40800000  4.0
   4005ae:	ee67 7a87 	vmul.f32	s15, s15, s14
   4005b2:	edc7 7a01 	vstr	s15, [r7, #4]
-		sprintf(buffer, "%lf", vel);
+		sprintf(buffer, "%f", vel);
   4005b6:	4b25      	ldr	r3, [pc, #148]	; (40064c <RTT_Handler+0x154>)
   4005b8:	68b8      	ldr	r0, [r7, #8]
   4005ba:	4798      	blx	r3
@@ -776,7 +776,7 @@ void RTT_Handler(void)
   4005c6:	4825      	ldr	r0, [pc, #148]	; (40065c <RTT_Handler+0x164>)
   4005c8:	4c1c      	ldr	r4, [pc, #112]	; (40063c <RTT_Handler+0x144>)
   4005ca:	47a0      	blx	r4
-		sprintf(buffer1, "%lf", dist);
+		sprintf(buffer1, "%f", dist);
   4005cc:	4b1f      	ldr	r3, [pc, #124]	; (40064c <RTT_Handler+0x154>)
   4005ce:	6878      	ldr	r0, [r7, #4]
   4005d0:	4798      	blx	r3
@@ -1079,9 +1079,6 @@ int main(void) {
 	configure_lcd();
   4007e2:	4b11      	ldr	r3, [pc, #68]	; (400828 <main+0x54>)
   4007e4:	4798      	blx	r3
- 	//font_draw_text(&sourcecodepro_28, "OIMUNDO", 50, 50, 1);
- 	//font_draw_text(&calibri_36, "Oi Mundo! #$!@", 50, 100, 1);
- 	//font_draw_text(&arial_72, "102456", 50, 200, 2);
 
 	/* Disable the watchdog */
 	WDT->WDT_MR = WDT_MR_WDDIS;
@@ -1116,10 +1113,10 @@ int main(void) {
 				* interrupção a cada 2 segundos (lembre que usamos o 
 				* pllPreScale, cada incremento do RTT leva 500ms (2Hz).
 				*/
-				uint16_t pllPreScale = (int) (((float) 32768) / 2.0);
+				uint16_t pllPreScale = (int) (((float) 32768) / 2.0); //2
   400802:	f44f 4380 	mov.w	r3, #16384	; 0x4000
   400806:	80fb      	strh	r3, [r7, #6]
-				uint32_t irqRTTvalue  = 4;
+				uint32_t irqRTTvalue  = 4; //4
   400808:	2304      	movs	r3, #4
   40080a:	603b      	str	r3, [r7, #0]
       
@@ -21464,7 +21461,7 @@ extern caddr_t _sbrk(int incr)
 
 00420490 <arial_72>:
   420490:	000a 0000 0440 0042 3930 0000 6425 0000     ....@.B.09..%d..
-  4204a0:	6c25 0066                                   %lf.
+  4204a0:	6625 0000                                   %f..
 
 004204a4 <_global_impure_ptr>:
   4204a4:	0010 2040 4e49 0046 6e69 0066 414e 004e     ..@ INF.inf.NAN.

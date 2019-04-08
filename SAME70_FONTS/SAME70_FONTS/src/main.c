@@ -23,14 +23,15 @@ static void RTT_init(uint16_t pllPreScale, uint32_t IrqNPulses);
 void BUT_init(void);
 void configure_lcd(void);
 void font_draw_text(tFont *font, const char *text, int x, int y, int spacing);
+void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
 
+volatile uint8_t flag_tc_counter = 0;
 volatile uint8_t pulsos = 0;
 volatile uint8_t tempo = 0;
 volatile Bool f_rtt_alarme = false;
 char buffer[32];
 char buffer1[32];
 char buffer2[32];
-
 
 
 /**
@@ -61,6 +62,23 @@ void BUT_init(void){
 	NVIC_SetPriority(BUT_PIO_ID, 1);
 };
 
+/**
+*  Interrupt handler for TC1 interrupt.
+*/
+void TC0_Handler(void){
+	volatile uint32_t ul_dummy;
+
+	/****************************************************************
+	* Devemos indicar ao TC que a interrupção foi satisfeita.
+	******************************************************************/
+	ul_dummy = tc_get_status(TC0, 0);
+
+	/* Avoid compiler warning */
+	UNUSED(ul_dummy);
+
+	flag_tc_counter += 1;
+}
+
 void RTT_Handler(void)
 {
 	uint32_t ul_status;
@@ -81,8 +99,8 @@ void RTT_Handler(void)
 		float w =  2*3.14*f;
 		float vel =  w*(0.65/2); 
 		float dist = vel*4;
-		sprintf(buffer, "%lf", vel);
-		sprintf(buffer1, "%lf", dist);
+		sprintf(buffer, "%f", vel);
+		sprintf(buffer1, "%f", dist);
 		font_draw_text(&arial_72, buffer, 50, 250, 1);
  		font_draw_text(&arial_72, buffer1, 50, 150, 1);
 		f_rtt_alarme = true;                  // flag RTT alarme
@@ -148,10 +166,6 @@ int main(void) {
 	board_init();
 	sysclk_init();	
 	configure_lcd();
-	
- 	//font_draw_text(&sourcecodepro_28, "OIMUNDO", 50, 50, 1);
- 	//font_draw_text(&calibri_36, "Oi Mundo! #$!@", 50, 100, 1);
- 	//font_draw_text(&arial_72, "102456", 50, 200, 2);
 
 	/* Disable the watchdog */
 	WDT->WDT_MR = WDT_MR_WDDIS;
@@ -188,8 +202,8 @@ int main(void) {
 				* interrupção a cada 2 segundos (lembre que usamos o 
 				* pllPreScale, cada incremento do RTT leva 500ms (2Hz).
 				*/
-				uint16_t pllPreScale = (int) (((float) 32768) / 2.0);
-				uint32_t irqRTTvalue  = 4;
+				uint16_t pllPreScale = (int) (((float) 32768) / 2.0); //2
+				uint32_t irqRTTvalue  = 4; //4
       
 				// reinicia RTT para gerar um novo IRQ
 				RTT_init(pllPreScale, irqRTTvalue);         

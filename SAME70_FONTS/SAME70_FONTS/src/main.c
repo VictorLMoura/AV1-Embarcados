@@ -72,19 +72,19 @@ void RTT_Handler(void)
 	if ((ul_status & RTT_SR_RTTINC) == RTT_SR_RTTINC) { 
 		tempo+=1;
 		sprintf(buffer2, "%d", tempo);
-		//font_draw_text(&calibri_36, buffer2, 50, 100, 1);
+		font_draw_text(&arial_72, buffer2, 50, 50, 1);
 	}
 
 	/* IRQ due to Alarm */
 	if ((ul_status & RTT_SR_ALMS) == RTT_SR_ALMS) {
 		float f = pulsos/4;
 		float w =  2*3.14*f;
-		int vel = (int) w*(0.65/2); 
-		int dist = (int) 2*3.14*(0.65/2)*pulsos;
-		sprintf(buffer, "%d", vel);
-		sprintf(buffer1, "%d", dist);
-		font_draw_text(&arial_72, buffer, 50, 200, 2);
- 		font_draw_text(&sourcecodepro_28, buffer1, 50, 50, 1);
+		float vel =  w*(0.65/2); 
+		float dist = vel*4;
+		sprintf(buffer, "%lf", vel);
+		sprintf(buffer1, "%lf", dist);
+		font_draw_text(&arial_72, buffer, 50, 250, 1);
+ 		font_draw_text(&arial_72, buffer1, 50, 150, 1);
 		f_rtt_alarme = true;                  // flag RTT alarme
 	}
 	pulsos = 0;
@@ -165,7 +165,7 @@ int main(void) {
 	f_rtt_alarme = true;
   
 	while(1) {
-		pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
+		//pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
 		
 			if (f_rtt_alarme){
       

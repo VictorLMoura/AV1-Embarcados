@@ -27,6 +27,8 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
 
 volatile uint8_t pulsos = 0;
 volatile uint8_t tempo = 0;
+volatile uint8_t minuto = 0;
+volatile uint8_t hora = 0;
 volatile Bool f_rtt_alarme = false;
 char buffer[32];
 char buffer1[32];
@@ -74,10 +76,18 @@ void TC0_Handler(void){
 
 	/* Avoid compiler warning */
 	UNUSED(ul_dummy);
-
-	tempo+=1;
-	char hora = "HH.MM." ((char) tempo);
-	sprintf(buffer2, "%d", tempo);
+	
+	tempo+=1; //em segundos
+	if (tempo == 60){
+		minuto += 1;
+		tempo = 0;
+	}
+	
+	if (minuto == 60){
+		hora += 1;
+		minuto = 0;
+	}
+	sprintf(buffer2, "%02d:%02d:%02d", hora,minuto,tempo);
 	font_draw_text(&arial_72, buffer2, 50, 50, 1);
 	
 	

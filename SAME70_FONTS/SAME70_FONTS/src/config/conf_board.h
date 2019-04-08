@@ -40,6 +40,7 @@
 /** Enable Com Port. */
 #define CONF_BOARD_UART_CONSOLE
 
+#define CONF_BOARD_ILI9488
 //! [tc_define_peripheral]
 /* Use TC Peripheral 0. */
 #define TC             TC0

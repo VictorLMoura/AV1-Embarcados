@@ -18,11 +18,20 @@
 
 struct ili9488_opt_t g_ili9488_display_opt;
 
+
+static void RTT_init(uint16_t pllPreScale, uint32_t IrqNPulses);
 void BUT_init(void);
 void configure_lcd(void);
 void font_draw_text(tFont *font, const char *text, int x, int y, int spacing);
 
 volatile uint8_t pulsos = 0;
+volatile uint8_t tempo = 0;
+volatile Bool f_rtt_alarme = false;
+char buffer[32];
+char buffer1[32];
+char buffer2[32];
+
+
 
 /**
 *  Handle Interrupcao botao 1
@@ -60,13 +69,25 @@ void RTT_Handler(void)
 	ul_status = rtt_get_status(RTT);
 
 	/* IRQ due to Time has changed */
-	if ((ul_status & RTT_SR_RTTINC) == RTT_SR_RTTINC) {  }
+	if ((ul_status & RTT_SR_RTTINC) == RTT_SR_RTTINC) { 
+		tempo+=1;
+		sprintf(buffer2, "%d", tempo);
+		//font_draw_text(&calibri_36, buffer2, 50, 100, 1);
+	}
 
 	/* IRQ due to Alarm */
 	if ((ul_status & RTT_SR_ALMS) == RTT_SR_ALMS) {
-		pin_toggle(LED_PIO, LED_IDX_MASK);    // BLINK Led
+		float f = pulsos/4;
+		float w =  2*3.14*f;
+		int vel = (int) w*(0.65/2); 
+		int dist = (int) 2*3.14*(0.65/2)*pulsos;
+		sprintf(buffer, "%d", vel);
+		sprintf(buffer1, "%d", dist);
+		font_draw_text(&arial_72, buffer, 50, 200, 2);
+ 		font_draw_text(&sourcecodepro_28, buffer1, 50, 50, 1);
 		f_rtt_alarme = true;                  // flag RTT alarme
 	}
+	pulsos = 0;
 }
 
 static float get_time_rtt(){
@@ -130,7 +151,7 @@ int main(void) {
 	
  	//font_draw_text(&sourcecodepro_28, "OIMUNDO", 50, 50, 1);
  	//font_draw_text(&calibri_36, "Oi Mundo! #$!@", 50, 100, 1);
- 	font_draw_text(&arial_72, "102456", 50, 200, 2);
+ 	//font_draw_text(&arial_72, "102456", 50, 200, 2);
 
 	/* Disable the watchdog */
 	WDT->WDT_MR = WDT_MR_WDDIS;

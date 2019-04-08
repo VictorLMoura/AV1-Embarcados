@@ -20,7 +20,8 @@ struct ili9488_opt_t g_ili9488_display_opt;
 
 void BUT_init(void);
 void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
-
+void configure_lcd(void);
+void font_draw_text(tFont *font, const char *text, int x, int y, int spacing);
 
 volatile uint8_t pulsos = 0;
 
@@ -28,9 +29,9 @@ volatile uint8_t pulsos = 0;
 *  Handle Interrupcao botao 1
 */
 
-static void Button0_Handler(uint32_t id, uint32_t mask)
+static void Button_callback(void)
 {
-	font_draw_text(&arial_72, "102456", 50, 200, 2);
+	pulsos += 1;
 }
 
 /**
@@ -44,63 +45,13 @@ void BUT_init(void){
 	/* config. interrupcao em borda de descida no botao do kit */
 	/* indica funcao (but_Handler) a ser chamada quando houver uma interrupção */
 	pio_enable_interrupt(BUT_PIO, BUT_PIN_MASK);
-	pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button0_Handler);
+	pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button_callback);
 
 	/* habilita interrupçcão do PIO que controla o botao */
 	/* e configura sua prioridade                        */
 	NVIC_EnableIRQ(BUT_PIO_ID);
 	NVIC_SetPriority(BUT_PIO_ID, 1);
 };
-
-void TC0_Handler(void){
-	volatile uint32_t ul_dummy;
-
-	/****************************************************************
-	* Devemos indicar ao TC que a interrupção foi satisfeita.
-	******************************************************************/
-	ul_dummy = tc_get_status(TC0, 0);
-
-	/* Avoid compiler warning */
-	UNUSED(ul_dummy);
-
-	/** Muda o estado do LED */
-	if(flag_led0)
-		pin_toggle(LED_PIO2, LED_PIN_MASK2);
-}
-
-/**
-* Configura TimerCounter (TC) para gerar uma interrupcao no canal (ID_TC e TC_CHANNEL)
-* na taxa de especificada em freq.
-*/
-void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
-	uint32_t ul_div;
-	uint32_t ul_tcclks;
-	uint32_t ul_sysclk = sysclk_get_cpu_hz();
-
-	uint32_t channel = 1;
-
-	/* Configura o PMC */
-	/* O TimerCounter é meio confuso
-	o uC possui 3 TCs, cada TC possui 3 canais
-	TC0 : ID_TC0, ID_TC1, ID_TC2
-	TC1 : ID_TC3, ID_TC4, ID_TC5
-	TC2 : ID_TC6, ID_TC7, ID_TC8
-	*/
-	pmc_enable_periph_clk(ID_TC);
-
-	/** Configura o TC para operar em  4Mhz e interrupçcão no RC compare */
-	tc_find_mck_divisor(freq, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
-	tc_init(TC, TC_CHANNEL, ul_tcclks | TC_CMR_CPCTRG);
-	tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq);
-
-	/* Configura e ativa interrupçcão no TC canal 0 */
-	/* Interrupção no C */
-	NVIC_EnableIRQ((IRQn_Type) ID_TC);
-	tc_enable_interrupt(TC, TC_CHANNEL, TC_IER_CPCS);
-
-	/* Inicializa o canal 0 do TC */
-	tc_start(TC, TC_CHANNEL);
-}
 
 void configure_lcd(void){
 	/* Initialize display parameter */
@@ -136,9 +87,9 @@ int main(void) {
 	sysclk_init();	
 	configure_lcd();
 	
-// 	font_draw_text(&sourcecodepro_28, "OIMUNDO", 50, 50, 1);
-// 	font_draw_text(&calibri_36, "Oi Mundo! #$!@", 50, 100, 1);
-// 	font_draw_text(&arial_72, "102456", 50, 200, 2);
+ 	font_draw_text(&sourcecodepro_28, "OIMUNDO", 50, 50, 1);
+ 	font_draw_text(&calibri_36, "Oi Mundo! #$!@", 50, 100, 1);
+ 	font_draw_text(&arial_72, "102456", 50, 200, 2);
 
 	/* Disable the watchdog */
 	WDT->WDT_MR = WDT_MR_WDDIS;
@@ -149,9 +100,9 @@ int main(void) {
 	BUT_init();
 
 	/** Configura timer TC0, canal 1 */
-	TC_init(TC0, ID_TC0, 0, 8);
+	TC_init(TC0, ID_TC0, 0, 1);
 		
 	while(1) {
-		
+		pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
 	}
 }

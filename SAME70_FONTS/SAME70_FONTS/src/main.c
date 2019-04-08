@@ -25,7 +25,6 @@ void configure_lcd(void);
 void font_draw_text(tFont *font, const char *text, int x, int y, int spacing);
 void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
 
-volatile uint8_t flag_tc_counter = 0;
 volatile uint8_t pulsos = 0;
 volatile uint8_t tempo = 0;
 volatile Bool f_rtt_alarme = false;
@@ -76,8 +75,48 @@ void TC0_Handler(void){
 	/* Avoid compiler warning */
 	UNUSED(ul_dummy);
 
-	flag_tc_counter += 1;
+	tempo+=1;
+	char hora = "HH.MM." ((char) tempo);
+	sprintf(buffer2, "%d", tempo);
+	font_draw_text(&arial_72, buffer2, 50, 50, 1);
+	
+	
 }
+
+/**
+* Configura TimerCounter (TC) para gerar uma interrupcao no canal (ID_TC e TC_CHANNEL)
+* na taxa de especificada em freq.
+*/
+void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
+	uint32_t ul_div;
+	uint32_t ul_tcclks;
+	uint32_t ul_sysclk = sysclk_get_cpu_hz();
+
+	uint32_t channel = 1;
+
+	/* Configura o PMC */
+	/* O TimerCounter é meio confuso
+	o uC possui 3 TCs, cada TC possui 3 canais
+	TC0 : ID_TC0, ID_TC1, ID_TC2
+	TC1 : ID_TC3, ID_TC4, ID_TC5
+	TC2 : ID_TC6, ID_TC7, ID_TC8
+	*/
+	pmc_enable_periph_clk(ID_TC);
+
+	/** Configura o TC para operar em  4Mhz e interrupçcão no RC compare */
+	tc_find_mck_divisor(freq, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
+	tc_init(TC, TC_CHANNEL, ul_tcclks | TC_CMR_CPCTRG);
+	tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq);
+
+	/* Configura e ativa interrupçcão no TC canal 0 */
+	/* Interrupção no C */
+	NVIC_EnableIRQ((IRQn_Type) ID_TC);
+	tc_enable_interrupt(TC, TC_CHANNEL, TC_IER_CPCS);
+
+	/* Inicializa o canal 0 do TC */
+	tc_start(TC, TC_CHANNEL);
+}
+
 
 void RTT_Handler(void)
 {
@@ -88,19 +127,19 @@ void RTT_Handler(void)
 
 	/* IRQ due to Time has changed */
 	if ((ul_status & RTT_SR_RTTINC) == RTT_SR_RTTINC) { 
-		tempo+=1;
-		sprintf(buffer2, "%d", tempo);
-		font_draw_text(&arial_72, buffer2, 50, 50, 1);
+		//tempo+=1;
+		//sprintf(buffer2, "%d", tempo);
+		//font_draw_text(&arial_72, buffer2, 50, 50, 1);
 	}
 
 	/* IRQ due to Alarm */
 	if ((ul_status & RTT_SR_ALMS) == RTT_SR_ALMS) {
 		float f = pulsos/4;
 		float w =  2*3.14*f;
-		float vel =  w*(0.65/2); 
-		float dist = vel*4;
-		sprintf(buffer, "%f", vel);
-		sprintf(buffer1, "%f", dist);
+		int vel = (int) w*(0.65/2); 
+		int dist = vel*4;
+		sprintf(buffer, "%02d", vel);
+		sprintf(buffer1, "%02d", dist);
 		font_draw_text(&arial_72, buffer, 50, 250, 1);
  		font_draw_text(&arial_72, buffer1, 50, 150, 1);
 		f_rtt_alarme = true;                  // flag RTT alarme
@@ -174,13 +213,15 @@ int main(void) {
 
 	/* Configura os botões */
 	BUT_init();
+
+	/** Configura timer TC0, canal 1 */
+	TC_init(TC0, ID_TC0, 0, 1/4); //para contar a cada segundo
 	
 	// Inicializa RTT com IRQ no alarme.
 	f_rtt_alarme = true;
   
 	while(1) {
 		//pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
-		
 			if (f_rtt_alarme){
       
 				/*
@@ -203,7 +244,7 @@ int main(void) {
 				* pllPreScale, cada incremento do RTT leva 500ms (2Hz).
 				*/
 				uint16_t pllPreScale = (int) (((float) 32768) / 2.0); //2
-				uint32_t irqRTTvalue  = 4; //4
+				uint32_t irqRTTvalue  = 8; //4
       
 				// reinicia RTT para gerar um novo IRQ
 				RTT_init(pllPreScale, irqRTTvalue);         
